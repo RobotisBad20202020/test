@@ -1,0 +1,30 @@
+FROM node:20-bookworm  # Using a specific LTS version of Node.js
+
+# Update package lists and install Tesseract and English language pack
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    # Add other language packs you need, for example:
+    # tesseract-ocr-fra \
+    # tesseract-ocr-spa
+
+# Clean up APT cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose the port (Railway will handle the actual mapping)
+EXPOSE 3000
+
+# Command to start the Node.js server
+CMD [ "node", "server.js" ]

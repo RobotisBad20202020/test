@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Text Extractor</title>
+</head>
+<body>
+    <h1>Upload a PDF File</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="pdfFile" accept=".pdf" required><br><br>
+        <button type="submit">Extract Text</button>
+    </form>
+    <div id="result"></div>
+    <script>
+        const resultDiv = document.getElementById('result');
+        const urlParams = new URLSearchParams(window.location.search);
+        const extractedText = urlParams.get('text');
+        if (extractedText) {
+            resultDiv.innerHTML = `<pre>${decodeURIComponent(extractedText)}</pre>`;
+        }
+    </script>
+</body>
+</html>
