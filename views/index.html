@@ -2,20 +2,62 @@
 <html>
 <head>
     <title>PDF Text Extractor</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
+        h1 { color: #333; }
+        form { margin-bottom: 20px; }
+        button { padding: 10px 15px; cursor: pointer; }
+        #result { margin-top: 20px; border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; white-space: pre-wrap; /* Preserve whitespace and wrap text */ word-wrap: break-word; /* Break long words */ }
+        #result pre { margin: 0; }
+        .loading { font-style: italic; color: #555; }
+    </style>
 </head>
 <body>
     <h1>Upload a PDF File</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
+    <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
         <input type="file" name="pdfFile" accept=".pdf" required><br><br>
         <button type="submit">Extract Text</button>
     </form>
-    <div id="result"></div>
+
+    <div id="result">
+        </div>
+     <div id="loadingMessage" class="loading" style="display: none;">
+        Processing PDF... This might take a moment, especially for scanned documents (OCR).
+    </div>
+
     <script>
         const resultDiv = document.getElementById('result');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // Show loading message on form submit
+        uploadForm.addEventListener('submit', () => {
+            resultDiv.innerHTML = ''; // Clear previous results
+            loadingMessage.style.display = 'block'; // Show loading indicator
+        });
+
+        // Check for extracted text in URL parameters when the page loads
         const urlParams = new URLSearchParams(window.location.search);
         const extractedText = urlParams.get('text');
+
         if (extractedText) {
-            resultDiv.innerHTML = `<pre>${decodeURIComponent(extractedText)}</pre>`;
+            loadingMessage.style.display = 'none'; // Hide loading indicator if text is present
+            // Sanitize slightly (basic example, consider a proper library for security if needed)
+            const decodedText = decodeURIComponent(extractedText);
+            const safeText = decodedText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            resultDiv.innerHTML = `<h2>Extracted Text:</h2><pre>${safeText}</pre>`;
+
+             // Optional: Clear the query parameter from the URL without reloading
+             if (window.history.replaceState) {
+                const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+             }
+        } else {
+             // Optionally check for error parameters if you modify the server to send them
+             // const errorParam = urlParams.get('error');
+             // if (errorParam) {
+             //    resultDiv.innerHTML = `<p style="color: red;">Error: ${decodeURIComponent(errorParam)}</p>`;
+             // }
         }
     </script>
 </body>
