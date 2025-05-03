@@ -1,61 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Text Extractor</title>
     <style>
-        body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
-        h1 { color: #333; }
-        form { margin-bottom: 20px; }
-        button { padding: 10px 15px; cursor: pointer; }
-        #result { margin-top: 20px; border: 1px solid #ccc; padding: 15px; background-color: #f9f9f9; white-space: pre-wrap; /* Preserve whitespace and wrap text */ word-wrap: break-word; /* Break long words */ }
-        #result pre { margin: 0; }
-        .loading { font-style: italic; color: #555; }
+        body { font-family: sans-serif; margin: 20px; }
+        #extractedOutput { 
+            width: 90%; 
+            height: 400px; 
+            margin-top: 15px; 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            white-space: pre-wrap; /* Preserve formatting */
+            overflow-y: scroll; 
+        }
+        .error { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Upload a PDF File</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
-        <input type="file" name="pdfFile" accept=".pdf" required><br><br>
-        <button type="submit">Extract Text</button>
+
+    <h1>Upload PDF to Extract Text</h1>
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="pdfFile" accept=".pdf" required>
+        <button type="submit">Upload and Extract</button>
     </form>
 
-    <div id="result">
-        </div>
-     <div id="loadingMessage" class="loading" style="display: none;">
-        Processing PDF... This might take a moment, especially for scanned documents (OCR).
-    </div>
+    <h2>Extracted Text:</h2>
+    <div id="status"></div> 
+    <textarea id="extractedOutput" readonly></textarea> 
 
     <script>
-        const resultDiv = document.getElementById('result');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const uploadForm = document.getElementById('uploadForm');
-
-        // Show loading message on form submit
-        uploadForm.addEventListener('submit', () => {
-            resultDiv.innerHTML = ''; // Clear previous results
-            loadingMessage.style.display = 'block'; // Show loading indicator
-        });
-
-        // Check for extracted text in localStorage when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            const storedText = localStorage.getItem('extractedText');
-
-            if (storedText) {
-                loadingMessage.style.display = 'none'; // Hide loading indicator
-                const decodedText = decodeURIComponent(storedText);
-                const safeText = decodedText.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                resultDiv.innerHTML = `<h2>Extracted Text:</h2><pre>${safeText}</pre>`;
-                localStorage.removeItem('extractedText'); // Clear the stored text
-            } else {
-                // Optionally check for an error message in localStorage as well
-                const storedError = localStorage.getItem('extractionError');
-                if (storedError) {
-                    loadingMessage.style.display = 'none';
-                    resultDiv.innerHTML = `<p style="color: red;">Error: ${decodeURIComponent(storedError)}</p>`;
-                    localStorage.removeItem('extractionError');
-                }
-            }
-        });
+        // This code runs every time index.html loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const outputArea = document.getElementById('extractedOutput');
+            const statusDiv = document.getElementById('status');
+            
+            // Check for an error message first
+            const errorMessage = localStorage.getItem('extractionError');
+            if (errorMessage) {
+                console.error("Extraction Error:", decodeURIComponent(errorMessage));
+                statusDiv.textContent = `Error: ${decodeURIComponent(errorMessage)}`;
+                statusDiv.className = 'error'; // Apply error styling
+                outputArea.value = ''; // Clear output area
+                localStorage.removeItem('extractionError'); // Clear the error message after displaying
+            } else {
+                 // Check for extracted text
+                const storedText = localStorage.getItem('extractedText');
+                if (storedText) {
+                    try {
+                        // Decode the text retrieved from localStorage
+                        outputArea.value = decodeURIComponent(storedText);
+                        statusDiv.textContent = 'Text extracted successfully.';
+                        statusDiv.className = ''; // Clear any previous error styling
+                        // Clear the stored text after displaying it so it doesn't reappear on refresh
+                        localStorage.removeItem('extractedText'); 
+                    } catch (e) {
+                        console.error("Error decoding stored text:", e);
+                        statusDiv.textContent = 'Error displaying stored text.';
+                        statusDiv.className = 'error';
+                        outputArea.value = 'Could not display the extracted text due to a decoding error.';
+                        localStorage.removeItem('extractedText'); // Clear corrupted data
+                    }
+                } else {
+                    statusDiv.textContent = 'Upload a PDF file.'; // Default message
+                    statusDiv.className = '';
+                }
+            }
+        });
     </script>
+
 </body>
 </html>
